@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 """
-AuerswaldCfgSwitcher
+Auerswald Config Manager
 
 Author: Andreas Thienemann
 License: GPLv3+
 """
 
+from rich import print as rprint
 import argparse
 import os.path
-import pprint
 import requests
+import rich.console
+import rich.table
 import sshtunnel
 import time
 import yaml
-from rich import print as rprint
-import rich.console
-import rich.table
 
 
 class AuerswaldCfgMgr:
@@ -39,7 +38,7 @@ class AuerswaldCfgMgr:
             requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
     def _load_config(self):
-        """Load the configfile"""
+        """Load the configfile into the self object"""
         file = f"{self.script_dir}/auerswald.cfg.yaml"
         with open(file, "r") as f:
             data = yaml.safe_load(f)
@@ -47,7 +46,7 @@ class AuerswaldCfgMgr:
             setattr(self, key, value)
 
     def _enable_debug(self):
-        """Enable debug output for requests"""
+        """Enable debug output"""
         try:
             import http.client as http_client
         except ImportError:
@@ -57,14 +56,19 @@ class AuerswaldCfgMgr:
 
         # You must initialize logging, otherwise you'll not see debug output.
         import logging
+        from rich.logging import RichHandler
 
-        logging.basicConfig()
-        logging.getLogger().setLevel(logging.DEBUG)
+        FORMAT = "%(message)s"
+        logging.basicConfig(
+            level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+        )
+        logging.getLogger("rich").setLevel(logging.DEBUG)
         requests_log = logging.getLogger("requests.packages.urllib3")
         requests_log.setLevel(logging.DEBUG)
         requests_log.propagate = True
 
     def _connect_ssh_tunnel(self):
+        """Setup and connect the SSH tunnel"""
         self.tunnel = sshtunnel.SSHTunnelForwarder(
             (self.ssh_host, self.ssh_port),
             ssh_username=self.ssh_user,
@@ -75,6 +79,7 @@ class AuerswaldCfgMgr:
         return self.tunnel.local_bind_port
 
     def _disconnect_ssh_tunnel(self):
+        """Tear down the tunnel"""
         self.tunnel.stop()
 
     def _fetch(self, path):
@@ -101,9 +106,17 @@ class AuerswaldCfgMgr:
         )
         return r
 
-    def _fetch_pbx_info(self):
-        """Fetch pbx info"""
+    def _fetch_pbx_menu_tree(self):
+        """Fetch pbx menu tree"""
         return self._fetch("/tree").json()
+
+    def _fetch_pbx_about(self):
+        """Fetch pbx about data"""
+        return self._fetch("/about_state").json()
+
+    def _fetch_pbx_logstatus(self):
+        """Fetch pbx logstatus"""
+        return self._fetch("/logstatus_state").json()
 
     def _fetch_autoswitch_state(self):
         """Fetch autoswitch state"""
@@ -117,33 +130,62 @@ class AuerswaldCfgMgr:
         """Fetch list of config"""
         return self._fetch("/configs_switchtimes_state").json()
 
+    def _pbx_user(self):
+        """Return the pbx login user"""
+        if not hasattr(self, "pbx_logstatus"):
+            self.pbx_logstatus = self._fetch_pbx_logstatus()
+        return self.pbx_logstatus["logstatus"]
+
     def _pbx_product(self):
         """Return the pbx product name"""
         if not hasattr(self, "pbx_info"):
-            self.pbx_info = self._fetch_pbx_info()
-        return self.pbx_info[0]["pbx"]
+            self.pbx_tree = self._fetch_pbx_menu_tree()
+        return self.pbx_tree[0]["pbx"]
 
     def _pbx_name(self):
         """Return the pbx name"""
         if not hasattr(self, "pbx_info"):
-            self.pbx_info = self._fetch_pbx_info()
-        return self.pbx_info[0]["pbxEdit"]
+            self.pbx_tree = self._fetch_pbx_menu_tree()
+        return self.pbx_tree[0]["pbxEdit"]
+
+    def _pbx_firmware(self):
+        """Return the pbx firmware"""
+        if not hasattr(self, "pbx_about"):
+            self.pbx_about = self._fetch_pbx_about()
+        return self.pbx_about["version"].strip()
+
+    def _pbx_date(self):
+        """Return the pbx date"""
+        if not hasattr(self, "pbx_about"):
+            self.pbx_about = self._fetch_pbx_about()
+        return self.pbx_about["date"]
+
+    def _pbx_serial(self):
+        """Return the pbx serial"""
+        if not hasattr(self, "pbx_about"):
+            self.pbx_about = self._fetch_pbx_about()
+        return self.pbx_about["serial"]
 
     def show_configurations(self):
         """Nicely display the current situation of the device"""
 
         console = rich.console.Console()
         rprint(
-            f"[white][bold]{self._pbx_product()} | {self._pbx_name()}:[/bold]",
-            "Zeitsteuerung [magenta]/[/magenta] Konfigurationen",
+            (
+                f"[white][bold]{self._pbx_product()}\n"
+                f"{self._pbx_firmware()}, Datum {self._pbx_date()}, SN {self._pbx_serial()} | "
+                f"Angemeldet als: {self._pbx_user()}@{self.auer_address} | Anlagenname: {self._pbx_name()} [/bold]\n"
+                "Zeitsteuerung [magenta]/[/magenta] Konfigurationen"
+            )
         )
         console.print()
         table = rich.table.Table(
-            title="Konfigurationsumschaltung",
+            title="Konfigurationsumschaltung".upper(),
             show_header=False,
             show_edge=False,
             show_lines=False,
             box=None,
+            title_justify="left"
         )
         autoswitch_state = self._fetch_autoswitch_state()
         table.add_row(
@@ -161,15 +203,17 @@ class AuerswaldCfgMgr:
         rprint(table)
 
         table = rich.table.Table(
-            title="Konfigurationsnamen",
+            title="Konfigurationsnamen".upper(),
             show_header=True,
             show_edge=False,
-            show_lines=False,
+            show_lines=True,
             box=None,
+            title_justify="left"
         )
         print()
-        table.add_column("Konfigurationsname")
-        table.add_column("Identifikationsnummer")
+        table.add_column("Konfigurationsname", justify="left")
+        table.add_column("Identifikationsnummer", justify="center")
+        table.add_column("Aktiv", justify="center")
         configs = self._fetch_cfg_state()
         for config in configs["rows"]:
             if config.get("userdata", {}).get("active"):
