@@ -8,7 +8,7 @@ Allows connecting to the PBX via a dynamic SSH tunnel for remote access.
 
 Clone the repo, install the requirements using pip:
 
-```
+```shell
 git clone https://github.com/ixs/AuerswaldCfgMgr.git
 cd AuerswaldCfgMgr
 pip install -r requirements.txt
