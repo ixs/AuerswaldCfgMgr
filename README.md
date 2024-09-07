@@ -21,7 +21,7 @@ Rename `auerswald.cfg.yaml.sample` to `auerswald.cfg.yaml` and add your site spe
 ## Example
 
 ```
-$ ./auer_cfg_switch.py show
+$ ./auer_cfg_mgr.py show
 COMpact 5200R | Apotheke: Zeitsteuerung / Konfigurationen
 
               Konfigurationsumschaltung
