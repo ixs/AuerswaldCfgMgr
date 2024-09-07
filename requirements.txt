@@ -1,0 +1,4 @@
+pyaml
+requests
+rich
+sshtunnel
