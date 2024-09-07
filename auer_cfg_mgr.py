@@ -218,8 +218,8 @@ class AuerswaldCfgMgr:
 
     def main(self):
         parser = argparse.ArgumentParser(
-            description="Manage the Auerswald PBX Config Templates", formatter_class=argparse.RawTextHelpFormatter
-
+            description="Manage the Auerswald PBX Config Templates",
+            formatter_class=argparse.RawTextHelpFormatter,
         )
         parser.add_argument(
             "command",
