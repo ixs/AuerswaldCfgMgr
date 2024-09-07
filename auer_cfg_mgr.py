@@ -172,10 +172,9 @@ class AuerswaldCfgMgr:
         console = rich.console.Console()
         rprint(
             (
-                f"[white][bold]{self._pbx_product()}\n"
+                f"[bold][blue]{self._pbx_product()}[/blue] [black]Zeitsteuerung - Konfigurationen\n"
                 f"{self._pbx_firmware()}, Datum {self._pbx_date()}, SN {self._pbx_serial()} | "
-                f"Angemeldet als: {self._pbx_user()}@{self.auer_address} | Anlagenname: {self._pbx_name()} [/bold]\n"
-                "Zeitsteuerung [magenta]/[/magenta] Konfigurationen"
+                f"Angemeldet als: {self._pbx_user()}@{self.auer_address} | Anlagenname: {self._pbx_name()}[/black][/bold]"
             )
         )
         console.print()
