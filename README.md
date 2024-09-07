@@ -21,6 +21,27 @@ Rename `auerswald.cfg.yaml.sample` to `auerswald.cfg.yaml` and add your site spe
 ## Example
 
 ```
+$ ./auer_cfg_mgr.py --help
+usage: auer_cfg_mgr.py [-h] [--debug] {show,enable,disable,select} [number]
+
+Manage the Auerswald PBX Config Templates
+
+positional arguments:
+  {show,enable,disable,select}
+                        The action to be performed:
+                        show - Show current configuration
+                        enable - Enable automatic switching
+                        disable - Disable automatic switching
+                        select - Manually select and activate a config
+  number                Config to switch to, required when command is 'select'
+
+options:
+  -h, --help            show this help message and exit
+  --debug               Debug output.
+$
+```
+
+```
 $ ./auer_cfg_mgr.py show
 COMpact 5200R | Apotheke: Zeitsteuerung / Konfigurationen
 
@@ -34,5 +55,5 @@ COMpact 5200R | Apotheke: Zeitsteuerung / Konfigurationen
  EA Offen / SM Zu     202
  EA Zu / SM Offen     203
  EA Zu / SM Zu        204
-$ 
+$
 ```

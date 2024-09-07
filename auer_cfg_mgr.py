@@ -218,18 +218,25 @@ class AuerswaldCfgMgr:
 
     def main(self):
         parser = argparse.ArgumentParser(
-            description="Manage the Auerswald PBX Config Templates"
+            description="Manage the Auerswald PBX Config Templates", formatter_class=argparse.RawTextHelpFormatter
+
         )
         parser.add_argument(
             "command",
             choices=["show", "enable", "disable", "select"],
-            help="Action to be performed.",
+            help=(
+                "The action to be performed:\n"
+                "show - Show current configuration\n"
+                "enable - Enable automatic switching\n"
+                "disable - Disable automatic switching\n"
+                "select - Manually select and activate a config\n"
+            ),
         )
         parser.add_argument(
             "number",
             nargs="?",
             type=int,
-            help="Config to switch to, required when command is 'switch'",
+            help="Config to switch to, required when command is 'select'",
         )
         parser.add_argument("--debug", action="store_true", help="Debug output.")
 
